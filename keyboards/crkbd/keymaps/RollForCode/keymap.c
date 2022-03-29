@@ -41,7 +41,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_LSFT, XXXXXXX, KC_LBRC, KC_RBRC, KC_MINS,  KC_EQL,                      KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, KC_PIPE, KC_TILD,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LGUI, _______,  KC_SPC,     KC_ENT,   KC_NO, KC_RALT
+                                          KC_LGUI, _______, trfvbKC_TRNS,    KC_TRNS, KC_TRNS, KC_TRNS
                                       //`--------------------------'  `--------------------------'
   )
 };
@@ -49,10 +49,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  if (!is_keyboard_master()) {
-    return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
-  }
-  return rotation;
+  return OLED_ROTATION_90;  // flips the display 180 degrees if offhand
 }
 
 #define L_BASE 0
@@ -61,16 +58,16 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 #define L_ADJUST 8
 
 void oled_render_layer_state(void) {
-    oled_write_P(PSTR("Layer: "), false);
+    oled_write_P(PSTR("Layer: /n"), false);
     switch (layer_state) {
         case L_BASE:
-            oled_write_ln_P(PSTR("Default"), false);
+            oled_write_ln_P(PSTR("CORE"), false);
             break;
         case L_LOWER:
-            oled_write_ln_P(PSTR("Lower"), false);
+            oled_write_ln_P(PSTR("Low"), false);
             break;
         case L_RAISE:
-            oled_write_ln_P(PSTR("Raise"), false);
+            oled_write_ln_P(PSTR("Below"), false);
             break;
         case L_ADJUST:
         case L_ADJUST|L_LOWER:
@@ -134,6 +131,8 @@ void oled_render_logo(void) {
     oled_write_P(crkbd_logo, false);
 }
 
+
+// main keyboard render function
 bool oled_task_user(void) {
     if (is_keyboard_master()) {
         oled_render_layer_state();
