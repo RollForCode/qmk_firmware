@@ -24,7 +24,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                         KC_Y,    KC_U,    KC_I,    KC_O,   KC_P,  KC_QUOT,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_BSPC,
+      BL_STEP,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_NO,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_ESC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
@@ -46,10 +46,17 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
+#ifdef RGBLIGHT_ENABLE
+void keyboard_post_init_user(void) {
+  rgblight_enable_noeeprom(); // Enables RGB, without saving settings
+  rgblight_sethsv_noeeprom(HSV_PURPLE);
+  rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
+}
+#endif
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  return OLED_ROTATION_90;  // flips the display 180 degrees if offhand
+  return OLED_ROTATION_270;  // flips the display 180 degrees if offhand
 }
 
 #define L_BASE 0
@@ -58,16 +65,16 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 #define L_ADJUST 8
 
 void oled_render_layer_state(void) {
-    oled_write_P(PSTR("Layer: /n"), false);
+    oled_write_P(PSTR("Layer \n"), false);
     switch (layer_state) {
         case L_BASE:
-            oled_write_ln_P(PSTR("CORE"), false);
+            oled_write_ln_P(PSTR(":CORE"), false);
             break;
         case L_LOWER:
-            oled_write_ln_P(PSTR("Low"), false);
+            oled_write_ln_P(PSTR(":Low"), false);
             break;
         case L_RAISE:
-            oled_write_ln_P(PSTR("Below"), false);
+            oled_write_ln_P(PSTR(":Up"), false);
             break;
         case L_ADJUST:
         case L_ADJUST|L_LOWER:
@@ -104,6 +111,8 @@ void set_keylog(uint16_t keycode, keyrecord_t *record) {
 }
 
 void oled_render_keylog(void) {
+    
+    oled_set_cursor(0,4);
     oled_write(keylog_str, false);
 }
 
@@ -122,13 +131,20 @@ void render_bootmagic_status(bool status) {
     }
 }
 
-void oled_render_logo(void) {
-    static const char PROGMEM crkbd_logo[] = {
-        0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94,
-        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4,
-        0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4,
-        0};
-    oled_write_P(crkbd_logo, false);
+
+static void oled_render_logo_jz(void) {
+  static const char PROGMEM my_logo[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xf8, 0x0c, 0x6c, 0x6c, 0x66, 0x66, 0xe6, 0xe3, 0x03, 0xff, 
+    0x03, 0x63, 0x66, 0x66, 0xe6, 0xec, 0xec, 0x0c, 0xf8, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xff, 0xc0, 0x04, 0x0c, 0x18, 0x18, 0x0f, 0x07, 0x00, 0xfc, 
+    0x00, 0x1c, 0x1e, 0x1f, 0x1b, 0x19, 0x18, 0xc0, 0xff, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x0f, 0x7e, 0xf0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x8d, 
+    0x00, 0x00, 0x00, 0x00, 0x80, 0xf0, 0x7e, 0x0f, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0x0e, 0x38, 0x70, 0xc0, 0xfb, 
+    0xc0, 0x70, 0x38, 0x0e, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  oled_set_cursor(0,12);
+  oled_write_raw_P(my_logo, sizeof(my_logo));
 }
 
 
@@ -137,8 +153,9 @@ bool oled_task_user(void) {
     if (is_keyboard_master()) {
         oled_render_layer_state();
         oled_render_keylog();
+        oled_render_logo_jz();
     } else {
-        oled_render_logo();
+        oled_render_logo_jz();
     }
     return false;
 }
