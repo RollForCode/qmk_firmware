@@ -46,12 +46,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
-#ifdef RGBLIGHT_ENABLE
-void keyboard_post_init_user(void) {
-  rgblight_enable_noeeprom(); // Enables RGB, without saving settings
-  rgblight_sethsv_noeeprom(HSV_PURPLE);
-  rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
-}
+#ifdef RGB_MATRIX_ENABLE
+// RGB stuff
+//   void keyboard_post_init_user(void) {
+//        rgblight_enable_noeeprom(); // Enables RGB, without saving settings
+//        rgblight_sethsv_noeeprom(HSV_PURPLE);
+//        rgblight_mode_noeeprom(RGBLIGHT_MODE_STATIC_LIGHT);
+//    }
+   void keyboard_post_init_user(void) {
+       rgb_matrix_enable_noeeprom();
+       rgb_matrix_set_color_all(30,255, 255);
+      rgb_matrix_mode_noeeprom(RGB_MATRIX_TYPING_HEATMAP);
+   }
+
 #endif
 
 #ifdef OLED_ENABLE
