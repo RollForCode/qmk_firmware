@@ -55,8 +55,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 //    }
    void keyboard_post_init_user(void) {
        rgb_matrix_enable_noeeprom();
-       rgb_matrix_set_color_all(30,255, 255);
-      rgb_matrix_mode_noeeprom(RGB_MATRIX_TYPING_HEATMAP);
+       rgb_matrix_sethsv_noeeprom(RGB_AZURE);
+      // rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_SPLASH);
    }
 
 #endif
@@ -92,8 +92,7 @@ void oled_render_layer_state(void) {
     }
 }
 
-
-char keylog_str[24] = {};
+char keylog_str[10] = {};
 
 const char code_to_name[60] = {
     ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
@@ -103,18 +102,30 @@ const char code_to_name[60] = {
     'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\',
     '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
 
+
+char keylog_hist[5] = {' ', ' ', ' ', ' ',' '};
+
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
   char name = ' ';
+
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
         (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { keycode = keycode & 0xFF; }
   if (keycode < 60) {
+      int i;
+    
+
     name = code_to_name[keycode];
+
+    for(i=0;i<4;i++)
+    {
+        keylog_hist[i]=keylog_hist[i+1];
+    }
+    keylog_hist[4]= name;
   }
 
-  // update keylog
-  snprintf(keylog_str, sizeof(keylog_str), "%dx%d, k%2d : %c",
-           record->event.key.row, record->event.key.col,
-           keycode, name);
+
+  snprintf(keylog_str, sizeof(keylog_str), "%c%c%c%c%c",
+           keylog_hist[0],keylog_hist[1],keylog_hist[2],keylog_hist[3],keylog_hist[4]);
 }
 
 void oled_render_keylog(void) {
