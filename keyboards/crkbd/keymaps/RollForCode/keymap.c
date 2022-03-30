@@ -56,7 +56,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    void keyboard_post_init_user(void) {
        rgb_matrix_enable_noeeprom();
        rgb_matrix_sethsv_noeeprom(RGB_AZURE);
-      // rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_SPLASH);
+       rgb_matrix_mode_noeeprom(RGB_MATRIX_TYPING_HEATMAP);
    }
 
 #endif
