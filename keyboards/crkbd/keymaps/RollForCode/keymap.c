@@ -89,6 +89,7 @@ const char code_to_name[60] = {
 
 char keylog_hist[5] = {' ', ' ', ' ', ' ',' '};
 
+
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
   char name = ' ';
 
@@ -148,26 +149,42 @@ uint8_t  current_idle_frame = 0;
 uint8_t current_tap_frame = 0;
 
 
-static void render_logo(void) {
+char selector[3] = {'^', ' ', ' '};
+
+static void the_blob(void) {
 
     // we write the image in 2 lines. this lets us avoid using precious space writing larger images. 
     static const char PROGMEM idle_up[IDLE_FRAMES][ANIM_SIZE] = {
-        {   // 'pixil-frame-0', 16x16px
+        {   // blob full, 16x16px
             0x00, 0xe0, 0x10, 0xc8, 0x44, 0xc4, 0x04, 0x04, 0x04, 0x04, 0xc4, 0x44, 0xc8, 0x10, 0xe0, 0x00, 
         },
-        {   // 'pixil-frame-1', 16x16px
+        {   // blob squashed, 16x16px
             0x00, 0x80, 0x40, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xa0, 0xa0, 0xa0, 0x20, 0x40, 0x80, 0x00, 
         }     
     };
 
     static const char PROGMEM idle_low[IDLE_FRAMES][ANIM_SIZE] = {
-        {   // 'pixil-frame-0', 16x16px
+        {   // blob full, 16x16px
             0x00, 0x1f, 0x20, 0x41, 0x81, 0x91, 0x90, 0x90, 0x90, 0x90, 0x91, 0x81, 0x41, 0x20, 0x1f, 0x00
         },
-        {   // 'pixil-frame-1', 16x16px 
+        {   // blob squashed, 16x16px
             0x3c, 0x43, 0x40, 0x80, 0xa7, 0xa5, 0xa7, 0xa0, 0xa0, 0x91, 0x92, 0x82, 0x83, 0x40, 0x43, 0x3c
         }     
     };
+
+    
+
+    void menu_bar(void) {
+
+        oled_set_cursor(0,12);
+        oled_write("A B C", false);
+
+        oled_set_cursor(0,13);
+        char selector_pos[6] = {};
+        snprintf(selector_pos, sizeof(selector_pos), "%c %c %c",
+           selector[0],selector[1],selector[2]);
+        oled_write(selector_pos, false);
+    }
 
     void animation_phase(void) {
         current_idle_frame = (current_idle_frame + 1) % IDLE_FRAMES;
@@ -182,28 +199,52 @@ static void render_logo(void) {
         animation_phase();
     }
     anim_sleep = timer_read32();
+    menu_bar();
 };
-
 
 // main keyboard render function
 bool oled_task_user(void) {
     if (is_keyboard_master()) {
         oled_render_layer_state();
         oled_render_keylog();
-        render_logo();
+        the_blob();
         //oled_render_logo_jz();
     } else {
-        render_logo();
+        the_blob();
         //oled_render_logo_jz();
     }
     return false;
 }
 
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-    set_keylog(keycode, record);
-  }
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {        
+    if (record->event.pressed) {
+            set_keylog(keycode, record);
+    }
+    int i;
+    char temp;
+    switch (keycode) {
+        case  KC_LEFT:
+            if (record->event.pressed) {
+                temp = selector[0];
+                for(i=0;i<2;i++)
+                {
+                    selector[i]=selector[i+1];
+                }
+                selector[2] = temp;
+            }
+            return true;        
+        case  KC_RIGHT:
+            if (record->event.pressed) {
+                temp = selector[2];
+                for(i=2;i>0;i--)
+                {
+                    selector[i]=selector[i-1];
+                }
+                selector[0] = temp;
+            }
+            return true; 
+    }
   return true;
 }
 #endif // OLED_ENABLE
