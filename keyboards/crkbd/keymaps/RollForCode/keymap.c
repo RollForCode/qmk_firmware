@@ -149,7 +149,10 @@ uint8_t  current_idle_frame = 0;
 uint8_t current_tap_frame = 0;
 
 
-char selector[3] = {'^', ' ', ' '};
+////////////
+// blob code
+int blob_option = 0;
+
 
 static void the_blob(void) {
 
@@ -176,11 +179,15 @@ static void the_blob(void) {
 
     void menu_bar(void) {
 
-        oled_set_cursor(0,12);
+        oled_set_cursor(0,11);
         oled_write("A B C", false);
 
-        oled_set_cursor(0,13);
+        oled_set_cursor(0,12);
         char selector_pos[6] = {};
+
+        char selector[3] = {' ', ' ', ' '};
+        selector[blob_option] = '^';
+
         snprintf(selector_pos, sizeof(selector_pos), "%c %c %c",
            selector[0],selector[1],selector[2]);
         oled_write(selector_pos, false);
@@ -202,6 +209,26 @@ static void the_blob(void) {
     menu_bar();
 };
 
+
+////////
+// shield code
+
+static void oled_render_logo_jz(void) {
+  static const char PROGMEM my_logo[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xf8, 0x0c, 0x6c, 0x6c, 0x66, 0x66, 0xe6, 0xe3, 0x03, 0xff, 
+    0x03, 0x63, 0x66, 0x66, 0xe6, 0xec, 0xec, 0x0c, 0xf8, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xff, 0xc0, 0x04, 0x0c, 0x18, 0x18, 0x0f, 0x07, 0x00, 0xfc, 
+    0x00, 0x1c, 0x1e, 0x1f, 0x1b, 0x19, 0x18, 0xc0, 0xff, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x0f, 0x7e, 0xf0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x8d, 
+    0x00, 0x00, 0x00, 0x00, 0x80, 0xf0, 0x7e, 0x0f, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x07, 0x0e, 0x38, 0x70, 0xc0, 0xfb, 
+    0xc0, 0x70, 0x38, 0x0e, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  oled_set_cursor(0,12);
+  oled_write_raw_P(my_logo, sizeof(my_logo));
+}
+
+
 // main keyboard render function
 bool oled_task_user(void) {
     if (is_keyboard_master()) {
@@ -210,8 +237,8 @@ bool oled_task_user(void) {
         the_blob();
         //oled_render_logo_jz();
     } else {
-        the_blob();
-        //oled_render_logo_jz();
+        //the_blob();
+        oled_render_logo_jz();
     }
     return false;
 }
@@ -221,27 +248,35 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
             set_keylog(keycode, record);
     }
-    int i;
-    char temp;
+
     switch (keycode) {
         case  KC_LEFT:
             if (record->event.pressed) {
-                temp = selector[0];
-                for(i=0;i<2;i++)
-                {
-                    selector[i]=selector[i+1];
-                }
-                selector[2] = temp;
+                blob_option = blob_option - 1;
+                if (blob_option < 0) {blob_option = 2;}
             }
             return true;        
         case  KC_RIGHT:
             if (record->event.pressed) {
-                temp = selector[2];
-                for(i=2;i>0;i--)
-                {
-                    selector[i]=selector[i-1];
+                blob_option = blob_option + 1;
+                if (blob_option > 2) {blob_option = 0;}
+            }
+            return true; 
+        case  KC_ENTER:
+            if (record->event.pressed) {
+                oled_set_cursor(4,13);
+                switch(blob_option) {
+                    case 0:
+                        oled_write("1", false);
+                        return true;
+                    case 1:
+                        oled_write("2", false);
+                        return true;
+                    case 2:
+                        oled_write("3", false);
+                        return true;
+
                 }
-                selector[0] = temp;
             }
             return true; 
     }
