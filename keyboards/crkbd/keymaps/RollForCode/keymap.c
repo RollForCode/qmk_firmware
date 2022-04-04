@@ -24,9 +24,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
        KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                         KC_Y,    KC_U,    KC_I,    KC_O,   KC_P,  KC_QUOT,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      BL_STEP,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_BSPC,
+      KC_NO,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      KC_NO,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_ESC,
+      KC_NUHS,   KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_ESC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
                                           KC_LCTL,   MO(1), KC_LCMD,    KC_ENT, KC_SPACE, KC_LSFT
                                       //`--------------------------'  `--------------------------'
@@ -136,7 +136,7 @@ void render_bootmagic_status(bool status) {
 
 //// ANIMATION
 
-#    define ANIM_FRAME_DURATION 600  // how long each frame lasts in ms
+#    define ANIM_FRAME_DURATION 500  // how long each frame lasts in ms
 #    define ANIM_SIZE 636  // number of bytes in array, minimize for adequate firmware size, max is 1024
 
 #    define IDLE_FRAMES 2
@@ -151,8 +151,14 @@ uint8_t current_tap_frame = 0;
 
 ////////////
 // blob code
+
+// the option under selection
 int blob_option = 0;
 
+// is the blob idle, or displaying a blob option frame
+int blob_idle = 1;
+// the count of blob deaths
+int blob_death = 0;
 
 static void the_blob(void) {
 
@@ -175,12 +181,21 @@ static void the_blob(void) {
         }     
     };
 
+    static const char PROGMEM death_fire_up[] = {
+            // 'pixil-frame-1', 16x16px
+            0x00, 0xb0, 0x00, 0x00, 0xd6, 0x00, 0xc0, 0xfb, 0xe0, 0xc0, 0x8a, 0x00, 0x80, 0xe8, 0x80, 0x20
+    };
+
+    static const char PROGMEM death_fire_low[] = {
+            // 'pixil-frame-1', 16x16px
+            0x38, 0x7f, 0xfc, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0x3f
+    };
     
 
     void menu_bar(void) {
 
         oled_set_cursor(0,11);
-        oled_write("A B C", false);
+        oled_write("F P X", false);
 
         oled_set_cursor(0,12);
         char selector_pos[6] = {};
@@ -194,11 +209,32 @@ static void the_blob(void) {
     }
 
     void animation_phase(void) {
-        current_idle_frame = (current_idle_frame + 1) % IDLE_FRAMES;
-        oled_set_cursor(0,14);
-        oled_write_raw_P(idle_up[abs((IDLE_FRAMES - 1) - current_idle_frame)], ANIM_SIZE);
-        oled_set_cursor(0,15);
-        oled_write_raw_P(idle_low[abs((IDLE_FRAMES - 1) - current_idle_frame)], ANIM_SIZE);
+
+   
+            current_idle_frame = (current_idle_frame + 1) % IDLE_FRAMES;
+            // we must write everything for line 14 here
+            oled_set_cursor(0,14);
+            if (blob_idle == 1) {
+                oled_write_raw_P(idle_up[abs((IDLE_FRAMES - 1) - current_idle_frame)], ANIM_SIZE);
+            } else {
+                switch (blob_option) {
+                    case 0:
+                        oled_write_raw_P(death_fire_up, sizeof(death_fire_up));
+                }
+            }
+            // all line 15 work here
+            oled_set_cursor(0,15);
+
+            if (blob_idle == 1) {
+                oled_write_raw_P(idle_low[abs((IDLE_FRAMES - 1) - current_idle_frame)], ANIM_SIZE);
+            } else {
+                switch (blob_option) {
+                    case 0:
+                        oled_write_raw_P(death_fire_low, sizeof(death_fire_low));
+                }
+                blob_idle = 1;
+            }
+
     }
 
     if (timer_elapsed32(anim_timer) > ANIM_FRAME_DURATION) {
@@ -245,6 +281,7 @@ bool oled_task_user(void) {
 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {        
+    char bd_str[3] = {};
     if (record->event.pressed) {
             set_keylog(keycode, record);
     }
@@ -264,21 +301,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return true; 
         case  KC_ENTER:
             if (record->event.pressed) {
-                oled_set_cursor(4,13);
-                switch(blob_option) {
-                    case 0:
-                        oled_write("1", false);
-                        return true;
-                    case 1:
-                        oled_write("2", false);
-                        return true;
-                    case 2:
-                        oled_write("3", false);
-                        return true;
-
-                }
-            }
-            return true; 
+                blob_idle = 0;
+                blob_death = blob_death + 1;
+                oled_set_cursor(0,13);
+                sprintf(bd_str, "D%d", blob_death);
+                oled_write(bd_str, false);
+                return true; 
+             }
     }
   return true;
 }
